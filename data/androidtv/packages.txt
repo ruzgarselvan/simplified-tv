@@ -1,0 +1,15 @@
+# Packages debloat.sh switches off (pm disable-user, never uninstalled; restore.sh turns them on).
+# One package per line; a package that is not installed is ignored, so brands can share this file.
+# Add a package only after you have seen the TV work without it. Run ./scripts/discover.sh on a
+# new TV for candidates; nothing it prints is a verdict.
+#
+# Seen switched off on a Grundig Google TV (Arçelik, MediaTek, Android 14, build UKNV.260312.001)
+# that still works. Not tested by this repo; check with --dry-run first.
+com.arcelik.easy_installation        # first-run installation helper
+com.arcelik.tvcarehub                # vendor care and promotion hub
+com.arcelik.tv.rctest                # remote-control factory test
+com.arcelik.smartremotecompanion.grundig  # phone-companion promotion
+fusion.android.tv.demo               # store demo mode
+com.google.android.feedback          # feedback reporter
+com.android.tv.feedbackconsent       # feedback consent prompt
+com.google.android.partnersetup      # partner setup
