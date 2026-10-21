@@ -9,7 +9,7 @@ import android.view.animation.DecelerateInterpolator;
 
 /** A round glass button with a line icon drawn by hand: no image assets. */
 final class IconButton extends View {
-    static final int SLIDERS = 0, SUN = 1;
+    static final int SLIDERS = 0, SUN = 1, INPUT = 2;
 
     private final int kind;
     private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -46,6 +46,13 @@ final class IconButton extends View {
                 float cos = (float) Math.cos(a), sin = (float) Math.sin(a);
                 canvas.drawLine(cx + cos * s * 0.22f, cy + sin * s * 0.22f, cx + cos * s * 0.28f, cy + sin * s * 0.28f, ink);
             }
+        } else if (kind == INPUT) {
+            // a plug: body, two prongs, a cable
+            float w = s * 0.30f, h = s * 0.19f, top = cy - h / 2 - s * 0.02f;
+            canvas.drawRoundRect(cx - w / 2, top, cx + w / 2, top + h, s * 0.04f, s * 0.04f, ink);
+            canvas.drawLine(cx - s * 0.06f, top, cx - s * 0.06f, top - s * 0.075f, ink);
+            canvas.drawLine(cx + s * 0.06f, top, cx + s * 0.06f, top - s * 0.075f, ink);
+            canvas.drawLine(cx, top + h, cx, top + h + s * 0.08f, ink);
         } else {
             // two sliders
             float half = s * 0.2f;

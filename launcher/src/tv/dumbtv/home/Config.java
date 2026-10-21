@@ -64,7 +64,7 @@ final class Config {
     static final Choice CLOCK = new Choice("clock", "Clock", "auto",
             new String[] {"auto", "24h", "12h"},
             new String[] {"System", "24-hour", "12-hour"});
-    static final Choice INPUTS = new Choice("inputs", "Inputs row", "off",
+    static final Choice INPUTS = new Choice("inputs", "Inputs button", "off",
             new String[] {"on", "off"},
             new String[] {"Shown", "Hidden"});
     static final Choice BACKGROUND = new Choice("background", "Background", "black",

@@ -48,7 +48,7 @@ it had been switched off. `adb uninstall tv.dumbtv.home` removes the app.
 
 **Options** (the sun button) cycles each setting with ◀ ▶ or OK: language (system, Türkçe, English), accent color,
 app names, clock format, background, atmosphere and wallpaper rotation. **YouTube app** appears once SmartTube is
-installed (`./launcher/install.sh --smarttube`) and makes the YouTube tile open it. Movie titles are always English.
+installed (`./launcher/install.sh --smarttube`) and makes the YouTube tile open it. Movie titles, genres and summaries follow it (Turkish or English; a film with no Turkish translation falls back to English).
 
 ## The settings file
 
@@ -59,7 +59,7 @@ language=auto             # auto tr en
 accent=pink                # white steel blue cyan green amber red pink violet, or #RRGGBB
 youtube=stock              # stock smarttube
 clock=auto                 # auto 24h 12h
-inputs=off                 # on off
+inputs=off                 # on off: a plug button at the top right that opens HDMI and AV inputs to its left
 background=black           # black graphite midnight image
 apps.order=com.nuvio.app,com.stremio.one
 apps.hide=com.android.tv.settings

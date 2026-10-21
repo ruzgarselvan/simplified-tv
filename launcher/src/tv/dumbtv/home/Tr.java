@@ -21,7 +21,7 @@ final class Tr {
             "Tile size", "Kutu boyutu", "Small", "Küçük", "Medium", "Orta", "Large", "Büyük",
             "App names", "Uygulama adları", "On focus", "Seçiliyken", "Always", "Her zaman", "Never", "Asla",
             "Clock", "Saat", "System", "Sistem", "24-hour", "24 saat", "12-hour", "12 saat",
-            "Inputs row", "Girişler satırı", "Shown", "Görünür", "Hidden", "Gizli",
+            "Inputs button", "Girişler düğmesi", "Shown", "Görünür", "Hidden", "Gizli",
             "Background", "Arka plan", "Graphite", "Grafit", "Midnight", "Gece mavisi",
             "Image file", "Resim dosyası", "Raised", "Yükseltilmiş", "Steel", "Çelik mavisi", "Atmosphere", "Atmosfer", "Language", "Dil", "YouTube app", "YouTube uygulaması",
             "SmartTube is not installed, opening YouTube", "SmartTube kurulu değil, YouTube açılıyor",
@@ -68,6 +68,11 @@ final class Tr {
             case "en": return Locale.US;
             default: return Locale.getDefault();
         }
+    }
+
+    /** The language TMDB is asked for: Turkish on a Turkish screen, English otherwise. */
+    static String tmdbLanguage() {
+        return "tr".equals(locale().getLanguage()) ? "tr-TR" : "en-US";
     }
 
     static String t(String en) {

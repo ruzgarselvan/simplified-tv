@@ -31,6 +31,16 @@ final class Carousel extends ViewGroup {
         this.padY = padY;
     }
 
+    /** Empties the row and puts it back to its first state. */
+    void clear() {
+        if (anim != null) anim.cancel();
+        removeAllViews();
+        w = new float[0];
+        focus = -1;
+        last = 0;
+        offset = 0;
+    }
+
     int count() {
         return getChildCount();
     }

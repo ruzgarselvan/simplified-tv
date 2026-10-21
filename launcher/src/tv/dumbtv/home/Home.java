@@ -65,12 +65,17 @@ public final class Home extends Activity {
     private Backdrop backdrop;
     private View shade;
     private TextView clock, date;
-    private Row apps, inputs;
+    private Row apps;
+    private List<Item> inputItems = new ArrayList<>(), shownInputs = new ArrayList<>();
+    private LinearLayout inputPanel;
+    private View inputButton;
+    private boolean inputsOpen;
     private Tile moving;
     private Carousel movieStrip;
     /** The popular movies spread and blurred across the whole screen; null until they load. */
     private Bitmap spread;
     private int moviePg = 1;
+    private String movieLang;
     private boolean movieLoading, movieEnd;
     private final List<Movies.Movie> movieList = new ArrayList<>();
     private String wallKey;
@@ -246,6 +251,10 @@ public final class Home extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (inputsOpen) {
+            closeInputs();
+            return;
+        }
         focusFirst();
     }
 
@@ -303,7 +312,7 @@ public final class Home extends Activity {
     /** Top and bottom of each visible grid row (the first one from its title), in {@code content}'s coordinates. */
     private List<int[]> rowBlocks(View content) {
         List<int[]> rows = new ArrayList<>();
-        for (Row row : new Row[] {apps, inputs}) {
+        for (Row row : new Row[] {apps}) {
             Grid g = row.strip;
             if (g.getVisibility() != View.VISIBLE) continue;
             int top = topIn(g, content);
@@ -407,7 +416,7 @@ public final class Home extends Activity {
         LinearLayout column = new LinearLayout(this) {
             @Override
             public View focusSearch(View focused, int direction) {
-                if (direction == View.FOCUS_DOWN && chips.contains(focused)) {
+                if (direction == View.FOCUS_DOWN && (chips.contains(focused) || inputPanel.indexOfChild(focused) >= 0)) {
                     View below = movieStrip.getVisibility() == View.VISIBLE ? movieStrip.entry() : nearest(apps.strip, focused);
                     if (below != null) return below;
                 }
@@ -445,6 +454,17 @@ public final class Home extends Activity {
         when.addView(clock);
         when.addView(date);
         head.addView(when, new LinearLayout.LayoutParams(0, WRAP, 1f));
+        inputPanel = new LinearLayout(this);
+        inputPanel.setOrientation(LinearLayout.HORIZONTAL);
+        inputPanel.setGravity(Gravity.CENTER_VERTICAL);
+        inputPanel.setVisibility(View.GONE);
+        head.addView(inputPanel, new LinearLayout.LayoutParams(WRAP, WRAP));
+        inputButton = chip(IconButton.INPUT, Tr.t("Inputs"), v -> {
+            if (inputsOpen) closeInputs();
+            else openInputs();
+        });
+        inputButton.setVisibility(View.GONE);
+        head.addView(inputButton);
         head.addView(chip(IconButton.SUN, Tr.t("Options"), v -> startActivity(new Intent(this, Options.class))));
         head.addView(chip(IconButton.SLIDERS, Tr.t("Settings"), v -> openSettings()));
         column.addView(head, new LinearLayout.LayoutParams(MATCH, WRAP));
@@ -456,7 +476,6 @@ public final class Home extends Activity {
         column.addView(movieStrip, strip);
 
         apps = new Row(Catalog.APPS, Tr.t("Apps"), column);
-        inputs = new Row(Catalog.INPUTS, Tr.t("Inputs"), column);
         return root;
     }
 
@@ -492,8 +511,18 @@ public final class Home extends Activity {
     private void apply() {
         applied = cfg.version();
         Tr.use(cfg.get(Config.LANGUAGE));
+        if (movieLang != null && !movieLang.equals(Tr.tmdbLanguage())) {
+            // the language changed: the row starts over in the new one
+            movieStrip.clear();
+            movieList.clear();
+            moviePg = 1;
+            movieEnd = false;
+            movieLang = null;
+            spread = null;
+            loadMovies();
+        }
         render(apps);
-        render(inputs);
+        showInputs();
         background();
         tick();
     }
@@ -530,11 +559,17 @@ public final class Home extends Activity {
         if (token.isEmpty() || movieLoading || movieEnd) return;
         movieLoading = true;
         int page = moviePg;
+        String lang = Tr.tmdbLanguage();
+        movieLang = lang;
         net.execute(() -> {
-            Movies.Result r = Movies.page(this, token, page);
+            Movies.Result r = Movies.page(this, token, page, lang);
             ui.post(() -> {
                 movieLoading = false;
-                if (isDestroyed() || r.failed) return; // tried again on the next focus move or visit
+                if (isDestroyed() || r.failed) return;
+                if (!lang.equals(Tr.tmdbLanguage())) {
+                    loadMovies(); // the language changed while this was on its way
+                    return;
+                } // tried again on the next focus move or visit
                 if (page < r.pages) moviePg = page + 1;
                 else movieEnd = true;
                 if (!r.movies.isEmpty()) addMovies(r.movies);
@@ -623,9 +658,72 @@ public final class Home extends Activity {
         if (!(f instanceof Tile && Tile.MOVIES.equals(((Tile) f).kind))) backdrop.show(spread);
     }
 
+    /** The inputs button shows only when Options turns it on and the TV has inputs to list. */
+    private void showInputs() {
+        boolean on = "on".equals(cfg.get(Config.INPUTS));
+        shownInputs = on ? Catalog.visible(cfg, Catalog.INPUTS, inputItems) : new ArrayList<>();
+        inputButton.setVisibility(shownInputs.isEmpty() ? View.GONE : View.VISIBLE);
+        if (shownInputs.isEmpty()) closeInputs();
+    }
+
+    /** The inputs open to the left of the button, as glass capsules, and close when one is picked. */
+    private void openInputs() {
+        if (shownInputs.isEmpty()) return;
+        inputPanel.removeAllViews();
+        for (Item it : shownInputs) {
+            TextView c = Ui.text(this, 13, Ui.TEXT, Ui.MEDIUM);
+            c.setText(Catalog.label(cfg, it));
+            c.setGravity(Gravity.CENTER);
+            c.setPadding(dp(13), dp(7), dp(13), dp(7));
+            c.setFocusable(true);
+            c.setClickable(true);
+            android.graphics.drawable.StateListDrawable bg = new android.graphics.drawable.StateListDrawable();
+            bg.addState(new int[] {android.R.attr.state_focused}, new Ui.Glass(Ui.Glass.ACTIVE, 0));
+            bg.addState(new int[0], new android.graphics.drawable.ColorDrawable(0)); // plain text until focused
+            c.setBackground(bg);
+            boolean live = it.state == TvInputManager.INPUT_STATE_CONNECTED;
+            c.setTextColor(new android.content.res.ColorStateList(
+                    new int[][] {{android.R.attr.state_focused}, {}}, new int[] {Ui.BASE, live ? Ui.SILVER : Ui.TITANIUM}));
+            c.setOnClickListener(v -> {
+                launch(new Intent(it.intent), null);
+                closeInputs();
+            });
+            c.setOnFocusChangeListener((v, has) -> {
+                v.animate().scaleX(has ? 1.06f : 1f).scaleY(has ? 1.06f : 1f).setDuration(160).start();
+                if (!has) ui.post(() -> {
+                    View f = getCurrentFocus();
+                    if (f == null || inputPanel.indexOfChild(f) < 0) closeInputs();
+                });
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(WRAP, WRAP);
+            lp.rightMargin = dp(2);
+            inputPanel.addView(c, lp);
+        }
+        inputsOpen = true;
+        inputPanel.animate().cancel();
+        inputPanel.setAlpha(0f);
+        inputPanel.setTranslationX(dp(36));
+        inputPanel.setVisibility(View.VISIBLE);
+        inputPanel.animate().alpha(1f).translationX(0).setDuration(220)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+        inputPanel.getChildAt(0).requestFocus();
+    }
+
+    private void closeInputs() {
+        if (!inputsOpen) return;
+        inputsOpen = false;
+        View f = getCurrentFocus();
+        if (f != null && inputPanel.indexOfChild(f) >= 0) inputButton.requestFocus();
+        inputPanel.animate().cancel();
+        inputPanel.animate().alpha(0f).translationX(dp(36)).setDuration(160)
+                .withEndAction(() -> {
+                    if (!inputsOpen) inputPanel.setVisibility(View.GONE);
+                }).start();
+    }
+
     private void loadInputs() {
-        inputs.all = Catalog.inputs(this, tv);
-        render(inputs);
+        inputItems = Catalog.inputs(this, tv);
+        showInputs();
     }
 
     private void render(Row row) {
@@ -635,8 +733,7 @@ public final class Home extends Activity {
                 ? ((Tile) focused).item.id : null;
         row.strip.removeAllViews();
 
-        boolean enabled = !Catalog.INPUTS.equals(row.kind) || "on".equals(cfg.get(Config.INPUTS));
-        List<Item> shown = enabled ? Catalog.visible(cfg, row.kind, row.all) : new ArrayList<>();
+        List<Item> shown = Catalog.visible(cfg, row.kind, row.all);
         if ("smarttube".equals(cfg.get(Config.YOUTUBE))) {
             // the YouTube tile opens SmartTube, so SmartTube needs no tile of its own
             for (java.util.Iterator<Item> it = shown.iterator(); it.hasNext(); ) {
@@ -700,7 +797,6 @@ public final class Home extends Activity {
 
     private void focusFirst() {
         View first = apps.strip.getChildAt(0);
-        if (first == null) first = inputs.strip.getChildAt(0);
         landed = apps.strip.getChildCount() > 0;
         if (first == null) first = chips.get(0);
         first.requestFocus();
@@ -815,7 +911,7 @@ public final class Home extends Activity {
                             break;
                         case 2:
                             Catalog.setShown(cfg, t.kind, t.item, false);
-                            render(app ? apps : inputs);
+                            render(apps);
                             Toast.makeText(this, Tr.t("Hidden. Bring it back from Options."), Toast.LENGTH_SHORT).show();
                             break;
                         default:

@@ -48,69 +48,95 @@ final class Movies {
         boolean failed;
     }
 
-    /** TMDB's genre ids, which do not change; the titles are English everywhere, so the genres are too. */
+    /** TMDB's genre ids, which do not change, in the two languages the screen speaks. */
     private static final java.util.Map<Integer, String> GENRES = new java.util.HashMap<>();
+    private static final java.util.Map<Integer, String> GENRES_TR = new java.util.HashMap<>();
 
     static {
-        Object[] g = {28, "Action", 12, "Adventure", 16, "Animation", 35, "Comedy", 80, "Crime",
-            99, "Documentary", 18, "Drama", 10751, "Family", 14, "Fantasy", 36, "History", 27, "Horror",
-            10402, "Music", 9648, "Mystery", 10749, "Romance", 878, "Sci-Fi", 10770, "TV Movie",
-            53, "Thriller", 10752, "War", 37, "Western"};
-        for (int i = 0; i < g.length; i += 2) GENRES.put((Integer) g[i], (String) g[i + 1]);
+        int[] id = {28, 12, 16, 35, 80, 99, 18, 10751, 14, 36, 27, 10402, 9648, 10749, 878, 10770, 53, 10752, 37};
+        String[] en = {"Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy",
+            "History", "Horror", "Music", "Mystery", "Romance", "Sci-Fi", "TV Movie", "Thriller", "War", "Western"};
+        String[] tr = {"Aksiyon", "Macera", "Animasyon", "Komedi", "Su\u00e7", "Belgesel", "Dram", "Aile", "Fantastik",
+            "Tarih", "Korku", "M\u00fczik", "Gizem", "Romantik", "Bilim Kurgu", "TV Filmi", "Gerilim", "Sava\u015f", "Vah\u015fi Batı"};
+        for (int i = 0; i < id.length; i++) {
+            GENRES.put(id[i], en[i]);
+            GENRES_TR.put(id[i], tr[i]);
+        }
     }
 
     private Movies() {}
 
     /**
-     * One page of TMDB's "trending this week" films that have a backdrop, in English. Blocking:
-     * call it off the UI thread.
+     * One page of TMDB's "trending this week" films that have a backdrop, in {@code lang} ("tr-TR" or
+     * "en-US"). A film with no translation comes back with an empty title or summary: those are taken
+     * from the English page. Blocking: call it off the UI thread.
      */
-    static Result page(Context c, String token, int page) {
+    static Result page(Context c, String token, int page, String lang) {
         Result out = new Result();
         File dir = dir(c);
-        if (dir == null) {
+        JSONObject root = dir == null ? null : fetch(dir, token, page, lang);
+        if (root == null) {
             out.failed = true;
             return out;
         }
-        File list = new File(dir, "trending-" + page + ".json");
-        try {
-            if (!list.isFile() || System.currentTimeMillis() - list.lastModified() > TTL_MS) {
-                write(list, get("https://api.themoviedb.org/3/trending/movie/week?language=en-US&page=" + page, token));
-            }
-        } catch (IOException e) {
-            Log.w("dumbtv", "trending movies: " + e.getMessage());
+        java.util.Map<Integer, JSONObject> english = new java.util.HashMap<>();
+        JSONObject en = lang.equals("en-US") ? null : fetch(dir, token, page, "en-US");
+        JSONArray base = en == null ? null : en.optJSONArray("results");
+        for (int i = 0; base != null && i < base.length(); i++) {
+            JSONObject o = base.optJSONObject(i);
+            if (o != null) english.put(o.optInt("id"), o);
         }
-        if (!list.isFile()) {
-            out.failed = true;
-            return out;
-        }
+        java.util.Map<Integer, String> genres = lang.startsWith("tr") ? GENRES_TR : GENRES;
         try {
-            JSONObject root = new JSONObject(new String(read(list), StandardCharsets.UTF_8));
             out.pages = Math.min(root.optInt("total_pages", 1), 500);
             JSONArray results = root.getJSONArray("results");
             for (int i = 0; i < results.length(); i++) {
                 JSONObject m = results.getJSONObject(i);
                 String path = m.optString("backdrop_path", "");
                 if (path.isEmpty() || "null".equals(path)) continue;
+                String title = m.optString("title", ""), overview = m.optString("overview", "");
+                JSONObject fallback = english.get(m.optInt("id"));
+                if (fallback != null) {
+                    if (title.isEmpty()) title = fallback.optString("title", "");
+                    if (overview.isEmpty()) overview = fallback.optString("overview", "");
+                }
                 String year = m.optString("release_date", "");
                 double vote = m.optDouble("vote_average", 0);
                 StringBuilder note = new StringBuilder(year.length() >= 4 ? year.substring(0, 4) : "");
                 JSONArray ids = m.optJSONArray("genre_ids");
                 int named = 0;
                 for (int g = 0; ids != null && g < ids.length() && named < 2; g++) {
-                    String name = GENRES.get(ids.optInt(g));
+                    String name = genres.get(ids.optInt(g));
                     if (name == null) continue;
                     note.append(note.length() > 0 ? " \u00b7 " : "").append(name);
                     named++;
                 }
                 if (vote > 0) note.append(note.length() > 0 ? " \u00b7 " : "").append("\u2605 ").append(String.format(Locale.US, "%.1f", vote));
-                out.movies.add(new Movie(m.optString("title", ""), path, note.toString(), m.optString("overview", "")));
+                out.movies.add(new Movie(title, path, note.toString(), overview));
             }
-        } catch (JSONException | IOException e) {
+        } catch (JSONException e) {
             Log.w("dumbtv", "trending movies: " + e.getMessage());
             out.failed = true;
         }
         return out;
+    }
+
+    /** The cached page, or a fresh one when it is older than {@link #TTL_MS}; null when there is nothing at all. */
+    private static JSONObject fetch(File dir, String token, int page, String lang) {
+        File list = new File(dir, "trending-" + lang + "-" + page + ".json");
+        try {
+            if (!list.isFile() || System.currentTimeMillis() - list.lastModified() > TTL_MS) {
+                write(list, get("https://api.themoviedb.org/3/trending/movie/week?language=" + lang + "&page=" + page, token));
+            }
+        } catch (IOException e) {
+            Log.w("dumbtv", "trending movies: " + e.getMessage());
+        }
+        if (!list.isFile()) return null;
+        try {
+            return new JSONObject(new String(read(list), StandardCharsets.UTF_8));
+        } catch (JSONException | IOException e) {
+            return null;
+        }
     }
 
     /** The backdrop of {@code m}, or null when it cannot be had; blocking. Half-size pixels: it adds up. */
