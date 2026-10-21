@@ -15,7 +15,7 @@ Sony, Xiaomi, onn and the rest. The home screen runs on Android 9 and newer.
   <img src="docs/screenshots/home.jpg" width="49%" alt="The home screen: movies row and app dock">
   <img src="docs/screenshots/movies.jpg" width="49%" alt="The focused movie takes half the row">
   <img src="docs/screenshots/summary.jpg" width="49%" alt="OK on a movie opens its summary">
-  <img src="docs/screenshots/home-en.jpg" width="49%" alt="The same screen in English">
+  <img src="docs/screenshots/inputs.jpg" width="49%" alt="The inputs button opens HDMI sources to its left">
 </p>
 
 ## Use it
