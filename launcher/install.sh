@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Installs dumbtv home on an Android TV or Google TV and makes it the home screen.
+# Installs Simplified TV on an Android TV or Google TV and makes it the home screen.
 #   ./launcher/install.sh              build from source, install, take HOME
 #   ./launcher/install.sh app.apk      install a ready APK instead of building
 #   ./launcher/install.sh --undo       give HOME back to the TV's own launcher
-#   ./launcher/install.sh --smarttube  install SmartTube, the ad-free YouTube client (Options > YouTube app)
 #   TMDB_TOKEN=<read access token> ./launcher/install.sh
 #                                      also stores the token on the TV for the movies row
 # Pick the TV with ADB_SERIAL when more than one is connected.
@@ -33,7 +32,7 @@ case ${1:-} in
     done
     sh_ cmd role remove-role-holder --user 0 android.app.role.HOME $PKG >/dev/null 2>&1 || true
     sh_ am start -a android.intent.action.MAIN -c android.intent.category.HOME >/dev/null
-    echo "HOME handed back (now: $(holder)). dumbtv home stays installed: adb uninstall $PKG"
+    echo "HOME handed back (now: $(holder)). Simplified TV stays installed: adb uninstall $PKG"
     exit 0 ;;
   --smarttube)
     # the latest release from github.com/yuliskov/SmartTube, the build that matches this TV's processor
@@ -56,7 +55,7 @@ for a in r["assets"]:
     echo "installed. Options > YouTube app > SmartTube makes the YouTube tile open it."
     exit 0 ;;
   ""|*.apk) ;;
-  *) echo "usage: $0 [app.apk | --smarttube | --undo]" >&2; exit 2 ;;
+  *) echo "usage: $0 [app.apk | --undo]" >&2; exit 2 ;;
 esac
 
 if [[ -n ${1:-} ]]; then
@@ -70,7 +69,7 @@ out=$(adb_ install -r "$APK" 2>&1 || true)
 case $out in
   *Success*) ;;
   *INSTALL_FAILED_UPDATE_INCOMPATIBLE*)
-    echo "error: the installed dumbtv home was signed with a different key." >&2
+    echo "error: the installed Simplified TV was signed with a different key." >&2
     echo "  back up its settings:  adb pull /sdcard/Android/data/$PKG/files/home.conf" >&2
     echo "  then remove it:        adb uninstall $PKG    and run this again" >&2
     exit 1 ;;
@@ -93,8 +92,8 @@ sh_ am start -n $PKG/.Home >/dev/null
 # the role manager answers a moment late
 for _ in 1 2 3 4 5; do [[ $(holder) == *$PKG* ]] && break; sleep 1; done
 if [[ $(holder) == *$PKG* ]]; then
-  echo "home: dumbtv ($(sh_ getprop ro.product.model | tr -d '\r'), Android $(sh_ getprop ro.build.version.release | tr -d '\r'))"
+  echo "home: Simplified TV ($(sh_ getprop ro.product.model | tr -d '\r'), Android $(sh_ getprop ro.build.version.release | tr -d '\r'))"
 else
-  echo "warning: dumbtv home is installed and open, but the TV did not make it the default home (holder: $(holder))." >&2
-  echo "  press HOME and choose dumbtv home if the TV asks; ./launcher/install.sh --undo reverts." >&2
+  echo "warning: Simplified TV is installed and open, but the TV did not make it the default home (holder: $(holder))." >&2
+  echo "  press HOME and choose Simplified TV if the TV asks; ./launcher/install.sh --undo reverts." >&2
 fi

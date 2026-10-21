@@ -34,7 +34,7 @@ for p in $system; do
 done
 
 {
-  printf '# dumbtv discover, %s\n# %s %s, Android %s\n' "$(date '+%Y-%m-%d %H:%M')" "$brand" "$model" "$(dev1 getprop ro.build.version.release)"
+  printf '# Simplified TV discover, %s\n# %s %s, Android %s\n' "$(date '+%Y-%m-%d %H:%M')" "$brand" "$model" "$(dev1 getprop ro.build.version.release)"
   printf '# %s system packages, %s already off, %s installed by the maker or the user\n#\n' \
     "$(printf '%s\n' "$system" | grep -c .)" "$(printf '%s\n' "$off" | grep -c .)" "$(printf '%s\n' "$third" | grep -c .)"
   printf '# Nothing here has been changed, and a name is a hint, not a verdict.\n\n'

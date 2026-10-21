@@ -1,4 +1,4 @@
-# dumbtv home
+# Simplified TV: the home screen
 
 A home screen for Android TV and Google TV: your apps in a glass dock, and a row of what is
 trending this week on TMDB. Plain Java and Android views, no libraries.
@@ -47,8 +47,7 @@ it had been switched off. `adb uninstall tv.dumbtv.home` removes the app.
 | Back on the home screen | jump to the first tile |
 
 **Options** (the sun button) cycles each setting with ◀ ▶ or OK: language (system, Türkçe, English), accent color,
-app names, clock format, background, atmosphere and wallpaper rotation. **YouTube app** appears once SmartTube is
-installed (`./launcher/install.sh --smarttube`) and makes the YouTube tile open it. Movie titles, genres and summaries follow it (Turkish or English; a film with no Turkish translation falls back to English).
+app names, clock format, background, atmosphere and wallpaper rotation. Movie titles, genres and summaries follow it (Turkish or English; a film with no Turkish translation falls back to English).
 
 ## The settings file
 
@@ -57,7 +56,6 @@ One plain text file on the TV: `/sdcard/Android/data/tv.dumbtv.home/files/home.c
 ```
 language=auto             # auto tr en
 accent=pink                # white steel blue cyan green amber red pink violet, or #RRGGBB
-youtube=stock              # stock smarttube
 clock=auto                 # auto 24h 12h
 inputs=off                 # on off: a plug button at the top right that opens HDMI and AV inputs to its left
 background=black           # black graphite midnight image

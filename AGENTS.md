@@ -1,4 +1,4 @@
-# AGENTS.md: running dumbtv on someone's Android TV
+# AGENTS.md: installing Simplified TV on someone's Android TV
 
 You are about to change someone else's television. Keep it short and friendly, say what you are about
 to do before you do it, and let them do the taps on the TV. One TV at a time: set `ADB_SERIAL` when
@@ -21,9 +21,7 @@ to do before you do it, and let them do the taps on the TV. One TV at a time: se
    `TMDB_TOKEN=... ./launcher/install.sh`, so it lands only in the TV's `home.conf`. Never print it,
    never write it in a file in this repo, never commit it. Keep `launcher/release.keystore`: updates
    must be signed with the same key.
-7. **SmartTube** is optional and only on their yes: `./launcher/install.sh --smarttube`, then
-   Options → YouTube app → SmartTube. It is an unofficial client with no ads; YouTube can break it.
-8. **Tell them the way back:** `./scripts/restore.sh` and `./launcher/install.sh --undo`.
+7. **Tell them the way back:** `./scripts/restore.sh` and `./launcher/install.sh --undo`.
 
 ## Rules
 
