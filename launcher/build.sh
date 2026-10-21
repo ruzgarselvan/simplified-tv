@@ -38,12 +38,15 @@ if [[ ! -f $KEYSTORE ]]; then
   echo "created signing key $KEYSTORE (keep it: updates must be signed with the same key)"
 fi
 
+# the typeface is optional: launcher/assets/Satoshi-Variable.ttf, else the TV's own font
+ASSETS=(); [[ -d assets ]] && ASSETS=(-A assets)
+
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/dumbtv-home.XXXXXX")
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/gen" "$WORK/classes" build
 
 "$BT/aapt2" compile --dir res -o "$WORK/res.zip"
-"$BT/aapt2" link -I "$JAR" --manifest AndroidManifest.xml "$WORK/res.zip" -A assets \
+"$BT/aapt2" link -I "$JAR" --manifest AndroidManifest.xml "$WORK/res.zip" ${ASSETS[@]+"${ASSETS[@]}"} \
   --min-sdk-version "$MIN_SDK" --target-sdk-version 28 \
   --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" \
   --java "$WORK/gen" -o "$WORK/app.apk"
