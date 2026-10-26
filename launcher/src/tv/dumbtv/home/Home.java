@@ -56,6 +56,7 @@ public final class Home extends Activity {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final ExecutorService net = Executors.newSingleThreadExecutor();
     private final List<View> chips = new ArrayList<>();
+    private View airplayButton;
     private Config cfg;
     private TvInputManager tv;
     private int applied = -1, appsGeneration;
@@ -201,6 +202,8 @@ public final class Home extends Activity {
         if (cfg.version() != applied) apply();
         else background();
         loadMovies();
+        // the receiver arrives with install.sh --airplay: no button until it is on the TV
+        airplayButton.setVisibility(getPackageManager().getLaunchIntentForPackage(Config.AIRPLAY) != null ? View.VISIBLE : View.GONE);
         IntentFilter f = new IntentFilter(Intent.ACTION_TIME_TICK);
         f.addAction(Intent.ACTION_TIME_CHANGED);
         f.addAction(Intent.ACTION_TIMEZONE_CHANGED);
@@ -465,6 +468,11 @@ public final class Home extends Activity {
         });
         inputButton.setVisibility(View.GONE);
         head.addView(inputButton);
+        airplayButton = chip(IconButton.AIRPLAY, "AirPlay", v -> {
+            Intent go = getPackageManager().getLaunchIntentForPackage(Config.AIRPLAY);
+            if (go != null) launch(go, null);
+        });
+        head.addView(airplayButton);
         head.addView(chip(IconButton.SUN, Tr.t("Options"), v -> startActivity(new Intent(this, Options.class))));
         head.addView(chip(IconButton.SLIDERS, Tr.t("Settings"), v -> openSettings()));
         column.addView(head, new LinearLayout.LayoutParams(MATCH, WRAP));

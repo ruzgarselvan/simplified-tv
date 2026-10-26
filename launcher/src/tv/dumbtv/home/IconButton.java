@@ -3,13 +3,14 @@ package tv.dumbtv.home;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.drawable.StateListDrawable;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 
 /** A round glass button with a line icon drawn by hand: no image assets. */
 final class IconButton extends View {
-    static final int SLIDERS = 0, SUN = 1, INPUT = 2;
+    static final int SLIDERS = 0, SUN = 1, INPUT = 2, AIRPLAY = 3;
 
     private final int kind;
     private final Paint ink = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -46,6 +47,17 @@ final class IconButton extends View {
                 float cos = (float) Math.cos(a), sin = (float) Math.sin(a);
                 canvas.drawLine(cx + cos * s * 0.22f, cy + sin * s * 0.22f, cx + cos * s * 0.28f, cy + sin * s * 0.28f, ink);
             }
+        } else if (kind == AIRPLAY) {
+            // a screen with a triangle rising from its base
+            float w = s * 0.34f, h = s * 0.24f, top = cy - h / 2 - s * 0.03f;
+            canvas.drawRoundRect(cx - w / 2, top, cx + w / 2, top + h, s * 0.03f, s * 0.03f, ink);
+            ink.setStyle(Paint.Style.FILL);
+            Path tri = new Path();
+            tri.moveTo(cx, top + h * 0.55f);
+            tri.lineTo(cx + s * 0.09f, top + h + s * 0.09f);
+            tri.lineTo(cx - s * 0.09f, top + h + s * 0.09f);
+            tri.close();
+            canvas.drawPath(tri, ink);
         } else if (kind == INPUT) {
             // a plug: body, two prongs, a cable
             float w = s * 0.30f, h = s * 0.19f, top = cy - h / 2 - s * 0.02f;

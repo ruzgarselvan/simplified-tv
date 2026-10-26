@@ -40,7 +40,7 @@ final class Catalog {
         Intent query = new Intent(Intent.ACTION_MAIN).addCategory(category);
         for (ResolveInfo ri : pm.queryIntentActivities(query, 0)) {
             ActivityInfo ai = ri.activityInfo;
-            if (ai.packageName.equals(self) || found.containsKey(ai.packageName)) continue;
+            if (ai.packageName.equals(self) || ai.packageName.equals(Config.AIRPLAY) || found.containsKey(ai.packageName)) continue; // AirPlay has its own button
             Intent launch = new Intent(Intent.ACTION_MAIN).addCategory(category)
                     .setClassName(ai.packageName, ai.name);
             Item it = new Item(ai.packageName, ri.loadLabel(pm), launch);

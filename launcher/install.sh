@@ -2,6 +2,7 @@
 # Installs Simplified TV on an Android TV or Google TV and makes it the home screen.
 #   ./launcher/install.sh              build from source, install, take HOME
 #   ./launcher/install.sh app.apk      install a ready APK instead of building
+#   ./launcher/install.sh --airplay    also install an AirPlay receiver (adds an AirPlay button to the home screen)
 #   ./launcher/install.sh --undo       give HOME back to the TV's own launcher
 #   TMDB_TOKEN=<read access token> ./launcher/install.sh
 #                                      also stores the token on the TV for the movies row
@@ -54,8 +55,26 @@ for a in r["assets"]:
     adb_ install -r build/smarttube.apk 2>&1 | tail -2
     echo "installed. Options > YouTube app > SmartTube makes the YouTube tile open it."
     exit 0 ;;
+  --airplay)
+    # the latest release from github.com/jqssun/android-airplay-server: an AirPlay receiver for the TV
+    mkdir -p build
+    info=$(curl -fsSL https://api.github.com/repos/jqssun/android-airplay-server/releases/latest \
+      | python3 -c 'import json,sys
+r=json.load(sys.stdin)
+for a in r["assets"]:
+    if a["name"] == "app-release.apk": print(a["browser_download_url"], a["digest"].split(":")[-1], r["tag_name"])') \
+      || { echo "error: could not read the AirPlay receiver release list" >&2; exit 1; }
+    set -- $info
+    [[ -n ${1:-} ]] || { echo "error: no APK in the latest AirPlay receiver release" >&2; exit 1; }
+    echo "AirPlay receiver $3"
+    curl -fL --progress-bar -o build/airplay.apk "$1" || { echo "error: download failed" >&2; exit 1; }
+    got=$(shasum -a 256 build/airplay.apk | awk '{print $1}')
+    [[ $got == "$2" ]] || { echo "error: checksum mismatch (got $got): not installing" >&2; rm -f build/airplay.apk; exit 1; }
+    adb_ install -r build/airplay.apk 2>&1 | tail -2
+    echo "installed. Open the AirPlay button on the home screen once on the TV and allow what it asks."
+    exit 0 ;;
   ""|*.apk) ;;
-  *) echo "usage: $0 [app.apk | --undo]" >&2; exit 2 ;;
+  *) echo "usage: $0 [app.apk | --airplay | --undo]" >&2; exit 2 ;;
 esac
 
 if [[ -n ${1:-} ]]; then

@@ -82,6 +82,8 @@ final class Config {
             new String[] {"Off", "Every return home", "Every hour", "Every day", "By time of day"});
 
     static final String SMARTTUBE = "com.teamsmart.videomanager.tv";
+    /** The AirPlay receiver that install.sh --airplay puts on the TV; its button shows only while it is installed. */
+    static final String AIRPLAY = "io.github.jqssun.airplay";
 
     /** Which app the YouTube tile opens; Options lists it only while SmartTube is installed. */
     static final Choice YOUTUBE = new Choice("youtube", "YouTube app", "stock",
